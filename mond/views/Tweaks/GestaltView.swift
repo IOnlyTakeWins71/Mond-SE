@@ -32,6 +32,8 @@ struct GestaltView: View {
                 return og_st
             case "no_dynamic_island":
                 return 0
+            case "mini":
+                return 2340
             case "14p":
                 return 2436
             case "14pm":
@@ -45,7 +47,7 @@ struct GestaltView: View {
             case "air":
                 return 2736
             case "x":
-                return 2436
+                return 2340
             default:
                 return 0
         }
@@ -54,6 +56,7 @@ struct GestaltView: View {
     private var st_to_sel: [Int: String] {
         [
             0: "no_dynamic_island",
+            2340: "mini",
             2436: "14p",
             2796: "14pm",
             2976: "15pm",
@@ -106,6 +109,7 @@ struct GestaltView: View {
                             Text("Disable Dynamic Island").tag("no_dynamic_island")
                         }
                     
+
                         Text("iPhone 14 Pro").tag("14p")
                         Text("iPhone 14 Pro Max").tag("14pm")
                         Text("iPhone 15 Pro Max").tag("15pm")
@@ -121,6 +125,7 @@ struct GestaltView: View {
                     
                         if hasHomeButton() {
                             Text("iPhone X Gestures").tag("x")
+                            Text("iPhone Mini Gestures").tag("mini")
                         }
                     } label: {
                         HStack {
