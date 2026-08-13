@@ -1,58 +1,44 @@
-name: build and release
+name: Build iOS IPA
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-concurrency:
-  group: ios-release-latest
-  cancel-in-progress: true
+    branches: [ main ]
+  workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
-  build-and-release:
+  build-ios:
     runs-on: macos-latest
 
     steps:
-      - name: checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: install xcpretty
-        run: sudo gem install xcpretty
+      - name: Set Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: build
+      # Step 1: Archive the App
+      - name: Build Xcode Archive
         run: |
-          set -euo pipefail
-          xcodebuild \
-            -project mond.xcodeproj \
-            -scheme mond \
-            -configuration Release \
+          xcodebuild archive \
+            -project "YourProject.xcodeproj" \
+            -scheme "YourSchemeName" \
             -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            build | xcpretty
+            -configuration Release \
+            -archivePath "$GITHUB_WORKSPACE/build/YourProject.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO
 
-          rm -rf Payload mond.ipa
-          mkdir -p Payload
-          APP_PATH="$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)"
-          cp -R "$APP_PATH" Payload/
-          ditto -c -k --keepParent Payload mond.ipa
-          rm -rf Payload
-
-      - name: release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # Step 2: Export Archive to .IPA
+      - name: Export IPA
         run: |
-          set -euo pipefail
-          if gh release view latest >/dev/null 2>&1; then
-            gh release delete latest --yes --cleanup-tag
-          fi
-          gh release create latest mond.ipa \
-            --target "${GITHUB_SHA}" \
-            --title "Latest" \
-            --notes "Automated build from ${GITHUB_SHA}"
+          xcodebuild -exportArchive \
+            -archivePath "$GITHUB_WORKSPACE/build/YourProject.xcarchive" \
+            -exportPath "$GITHUB_WORKSPACE/build/output" \
+            -exportOptionsPlist ExportOptions.plist \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Step 3: Upload .IPA File to GitHub Actions
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: App-IPA
+          path: build/output/*.ipa
